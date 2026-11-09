@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS CRM - Telegram Auto Sales V3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { darkbg: '#1a1a1a', panelbg: '#2b2b2b', primary: '#1f538d', primary_hover: '#163c66', accent: '#ffaa00' } } } }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        .menu-item.active { background-color: #1f538d !important; color: white !important; }
+        .toggle-checkbox:checked { right: 0; border-color: #3b82f6; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #3b82f6; }
+    </style>
+</head>
+<body class="bg-darkbg text-gray-200 font-sans h-screen flex overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-panelbg border-r border-gray-700 flex flex-col">
+        <div class="p-6 text-center border-b border-gray-700">
+            <h1 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-fire text-red-500"></i> SIÊU TOOL CRM</h1>
+            <p class="text-xs text-accent">Bản SaaS Đa Nhóm Tự Động</p>
+        </div>
+        <div class="p-4">
+            <label class="block text-xs text-gray-400 mb-1">ID Khách Thuê (Tenant ID)</label>
+            <input type="text" id="tenant_id" value="TENANT_001" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-sm text-white font-bold text-center" onchange="loadData()">
+        </div>
+        <nav class="flex-1 px-4 py-2 space-y-2">
+            <button onclick="switchTab('tab-config', this)" class="menu-item active w-full flex items-center px-4 py-3 rounded-md text-gray-300 hover:bg-gray-700 transition">
+                <i class="fa-solid fa-cogs w-6 mr-2"></i> 1. Đăng nhập & Nhóm
+            </button>
+            <button onclick="switchTab('tab-tools', this)" class="menu-item w-full flex items-center px-4 py-3 rounded-md text-gray-300 hover:bg-gray-700 transition">
+                <i class="fa-solid fa-shield-halved w-6 mr-2"></i> 2. Vũ khí (Bảo vệ)
+            </button>
+            <button onclick="switchTab('tab-crm', this)" class="menu-item w-full flex items-center px-4 py-3 rounded-md text-gray-300 hover:bg-gray-700 transition">
+                <i class="fa-solid fa-users w-6 mr-2"></i> 3. Data Khách Hàng
+            </button>
+        </nav>
+        <div class="p-4 border-t border-gray-700">
+            <button onclick="saveConfig()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded shadow-lg transition">
+                <i class="fa-solid fa-save"></i> LƯU CẤU HÌNH DB
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto p-8 relative">
+        <div id="toast" class="fixed top-5 right-5 bg-green-500 text-white px-6 py-3 rounded shadow-lg transform transition-transform duration-300 translate-x-full z-50">Thành công!</div>
+
+        <!-- TAB 1: CẤU HÌNH (Đã thu gọn để code ngắn gọn, giữ nguyên cấu trúc cũ) -->
+        <div id="tab-config" class="tab-content max-w-4xl mx-auto w-full" style="display: block;">
+            <h2 class="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-2">Cấu Hình Kết Nối Telegram</h2>
+            
+            <div class="bg-panelbg p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-lg font-bold text-white mb-4"><i class="fa-solid fa-key text-accent"></i> 1. Cấu hình Cốt lõi (Bắt buộc)</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-sm text-gray-400 mb-1">API ID</label><input type="text" id="api_id" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white"></div>
+                    <div><label class="block text-sm text-gray-400 mb-1">API Hash</label><input type="password" id="api_hash" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white"></div>
+                    <div class="col-span-2"><label class="block text-sm text-gray-400 mb-1">Bot Token (Quản Gia)</label><input type="password" id="bot_token" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white"></div>
+                </div>
+            </div>
+
+            <div class="bg-panelbg p-6 rounded-lg shadow-md mb-6 border-l-4 border-blue-500">
+                <h3 class="text-lg font-bold text-white mb-4"><i class="fa-solid fa-user-secret text-accent"></i> 2. Đăng nhập Nick Điệp Viên</h3>
+                <div class="flex space-x-4 mb-4">
+                    <div class="flex-1"><label class="block text-sm text-gray-400 mb-1">Số điện thoại (+84...)</label><input type="text" id="spy_phone" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white"></div>
+                    <div class="flex-1 flex items-end"><button onclick="requestOTP()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">Bước 1: Lấy OTP</button></div>
+                </div>
+                <div id="otp_section" class="flex space-x-4 mt-4 hidden">
+                    <div class="flex-1"><label class="block text-sm text-yellow-400 mb-1">Nhập mã OTP</label><input type="text" id="otp_code" class="w-full bg-darkbg border border-yellow-500 rounded px-3 py-2 text-white"></div>
+                    <div class="flex-1 flex items-end"><button onclick="submitOTP()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded">Bước 2: Xác nhận</button></div>
+                </div>
+                <p id="login_status_text" class="text-sm font-bold text-gray-400 mt-2 bg-darkbg p-2 rounded inline-block"><i class="fa-solid fa-circle-info"></i> Trạng thái: Chưa xác định</p>
+            </div>
+            
+            <div class="bg-panelbg p-6 rounded-lg shadow-md mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-white"><i class="fa-solid fa-network-wired text-accent"></i> 3. Cấu hình Nhóm</h3>
+                    <button onclick="triggerScan()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded shadow font-bold text-sm"><i class="fa-solid fa-search"></i> Quét Nhóm</button>
+                </div>
+                <div class="mb-4 p-4 bg-gray-800 rounded flex space-x-2">
+                    <select id="scanned_groups_select" class="flex-1 bg-darkbg border border-gray-600 rounded px-3 text-white text-sm"><option value="">-- Trống --</option></select>
+                    <button onclick="addIDToInput('spy_target_groups')" class="bg-primary px-3 py-2 rounded text-xs text-white">Mắt thần (+)</button>
+                    <button onclick="addIDToInput('my_protected_groups')" class="bg-primary px-3 py-2 rounded text-xs text-white">Nhóm nhà (+)</button>
+                    <button onclick="addIDToInput('sale_chat_id')" class="bg-primary px-3 py-2 rounded text-xs text-white">Group Sale (+)</button>
+                </div>
+                <div class="space-y-4">
+                    <div><label class="block text-sm text-gray-400 mb-1">Nhóm Sale nhận cảnh báo (sale_chat_id)</label><input type="text" id="sale_chat_id" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white text-sm"></div>
+                    <div><label class="block text-sm text-gray-400 mb-1">Mắt thần (spy_target_groups)</label><input type="text" id="spy_target_groups" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white text-sm"></div>
+                    <div><label class="block text-sm text-gray-400 mb-1">Nhóm nhà (my_protected_groups)</label><input type="text" id="my_protected_groups" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white text-sm"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: VŨ KHÍ (BẢN FULL) -->
+        <div id="tab-tools" class="tab-content max-w-4xl mx-auto w-full" style="display: none;">
+            <h2 class="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-2">Vũ Khí & Bảo Vệ Tư Dinh</h2>
+            
+            <!-- LUỒNG ĐÁNH CHẶN ĐỐI THỦ -->
+            <div class="bg-panelbg p-6 rounded-lg shadow-md mb-6 border-t-2 border-primary">
+                <h3 class="text-md font-bold text-white mb-4"><i class="fa-solid fa-plane-slash text-gray-400"></i> LUỒNG ĐÁNH CHẶN ĐỐI THỦ</h3>
+                <div class="space-y-3">
+                    <input type="text" id="keywords" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white text-sm" placeholder="xa bờ, cháy, xin link, kéo, nạp...">
+                </div>
+            </div>
+
+            <!-- LỌC RÁC CHUYÊN SÂU -->
+            <div class="bg-panelbg p-6 rounded-lg shadow-md mb-6 border-t-2 border-primary">
+                <h3 class="text-md font-bold text-white mb-4"><i class="fa-solid fa-shield-halved text-gray-400"></i> LỌC RÁC CHUYÊN SÂU (Tất cả Nhóm Nhà)</h3>
+                
+                <div class="flex items-center mb-4">
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                        <input type="checkbox" id="auto_kick_spam" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                        <label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
+                    </div>
+                    <span class="text-sm font-bold text-white">Bật Quản Gia (Mắt Thần soi khách mới)</span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 pl-4 mb-4">
+                    <div class="flex items-center">
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                            <input type="checkbox" id="kick_no_user" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                            <label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
+                        </div>
+                        <span class="text-sm text-gray-300">Kick: Không Username</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                            <input type="checkbox" id="kick_no_avatar" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                            <label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
+                        </div>
+                        <span class="text-sm text-gray-300">Kick: Không Avatar</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                            <input type="checkbox" id="kick_foreign_name" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                            <label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
+                        </div>
+                        <span class="text-sm text-gray-300">Kick: Tên lạ (Trung, Á Rập...)</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center pl-4">
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                        <input type="checkbox" id="anti_link" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                        <label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
+                    </div>
+                    <span class="text-sm text-gray-300">Xóa tin nhắn: Có chứa Link / Chuyển tiếp (Cướp khách)</span>
+                </div>
+            </div>
+
+            <!-- CHIẾN DỊCH FOMO ĐẾM NGƯỢC -->
+            <div class="bg-panelbg p-6 rounded-lg shadow-md mb-6 border-t-2 border-primary">
+                <h3 class="text-md font-bold text-white mb-4"><i class="fa-solid fa-bullhorn text-gray-400"></i> CHIẾN DỊCH FOMO ĐẾM NGƯỢC (Tất cả Nhóm Nhà)</h3>
+                
+                <div class="flex items-center mb-4">
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                        <input type="checkbox" id="enable_fomo" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                        <label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
+                    </div>
+                    <span class="text-sm font-bold text-white">Bật tự động quăng mồi đếm ngược</span>
+                </div>
+
+                <div class="flex items-center space-x-2 text-sm text-gray-300 mb-4 pl-4">
+                    <span>Khoảng cách ngẫu nhiên thả từng câu đếm ngược (Phút) - Từ:</span>
+                    <input type="number" id="fomo_min" class="w-16 bg-darkbg border border-gray-600 rounded px-2 py-1 text-center" value="5">
+                    <span>đến</span>
+                    <input type="number" id="fomo_max" class="w-16 bg-darkbg border border-gray-600 rounded px-2 py-1 text-center" value="10">
+                </div>
+
+                <div class="flex items-center space-x-2 text-sm text-gray-300 mb-4 pl-4">
+                    <span>Thời gian nghỉ sau khi hết kịch bản để lặp lại vòng mới (Phút):</span>
+                    <input type="number" id="fomo_cooldown" class="w-16 bg-darkbg border border-gray-600 rounded px-2 py-1 text-center" value="60">
+                </div>
+
+                <div class="pl-4">
+                    <label class="block text-sm text-gray-400 mb-2">Kịch bản đếm ngược (Mỗi dòng là 1 tin nhắn, ấn Enter để xuống dòng):</label>
+                    <textarea id="fomo_script" rows="5" class="w-full bg-[#111] border border-gray-700 rounded px-3 py-2 text-sm text-gray-300 font-mono" placeholder="MỞ CA KÉO VIP 20H. Nhận đúng 5 SLOT vốn 5M. Ai đi inbox!&#10;KHÁCH đăng ký nhanh quá, hiện tại chỉ còn trống 3 SLOT nhé.&#10;Còn duy nhất 1 SLOT cuối cùng cho bác nào nhanh tay. Inbox ngay!&#10;ĐÃ CHỐT ĐỦ SLOT. Hẹn anh em ca sau!"></textarea>
+                </div>
+            </div>
+            
+            <div class="text-center mt-6">
+                <button onclick="saveConfig()" class="bg-primary hover:bg-primary_hover text-white font-bold py-2 px-8 rounded shadow"><i class="fa-solid fa-save"></i> LƯU CẤU HÌNH VŨ KHÍ</button>
+            </div>
+        </div>
+
+        <!-- TAB 3: DATA KHÁCH HÀNG (Giữ nguyên) -->
+        <div id="tab-crm" class="tab-content w-full h-full flex-col" style="display: none;">
+            <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold text-white"><i class="fa-solid fa-users text-accent"></i> Data Khách Hàng Live</h2></div>
+            <div class="flex-1 bg-panelbg rounded-lg shadow-md overflow-hidden flex flex-col">
+                <div class="overflow-y-auto flex-1">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="text-xs uppercase bg-primary text-white sticky top-0">
+                            <tr><th class="px-4 py-3">Khách hàng</th><th class="px-4 py-3">Nguồn Nhóm</th><th class="px-4 py-3">Trạng thái</th><th class="px-4 py-3">Ghi chú Sale</th></tr>
+                        </thead>
+                        <tbody id="crm_body" class="divide-y divide-gray-700"><tr><td colspan="4" class="text-center py-8 text-gray-500">Đang tải dữ liệu...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).style.display = tabId === 'tab-crm' ? 'flex' : 'block';
+            btnElement.classList.add('active');
+        }
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `fixed top-5 right-5 px-6 py-3 rounded shadow-lg transform transition-transform duration-300 z-50 text-white ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            toast.style.transform = 'translateX(0)';
+            setTimeout(() => toast.style.transform = 'translateX(150%)', 4000);
+        }
+
+        const SUPABASE_URL = "https://uzsrmmfeynropfxkerud.supabase.co"; // ĐIỀN URL CỦA BẠN
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6c3JtbWZleW5yb3BmeGtlcnVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxNDEwNDgsImV4cCI6MjEwOTcxNzA0OH0.kyC9sv9uQKORq1EE-j7l1FjwhVko7qow2sCOTCUGAPM";
+        
+        let supabaseClient = null;
+        try { if (window.supabase) supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) { console.error(e); }
+
+        let customersData = [];
+
+        async function loadData() {
+            if(!supabaseClient) return;
+            const tenant_id = document.getElementById('tenant_id').value;
+            
+            const { data: configData } = await supabaseClient.from('configs').select('*').eq('tenant_id', tenant_id).single();
+            if (configData) {
+                // Tab 1
+                document.getElementById('api_id').value = configData.api_id || '';
+                document.getElementById('api_hash').value = configData.api_hash || '';
+                document.getElementById('bot_token').value = configData.bot_token || '';
+                document.getElementById('spy_phone').value = configData.spy_phone || '';
+                document.getElementById('sale_chat_id').value = configData.sale_chat_id || '';
+                document.getElementById('spy_target_groups').value = configData.spy_target_groups || '';
+                document.getElementById('my_protected_groups').value = configData.my_protected_groups || '';
+                
+                // Tab 2 (Vũ Khí)
+                document.getElementById('keywords').value = configData.keywords || '';
+                document.getElementById('auto_kick_spam').checked = configData.auto_kick_spam || false;
+                document.getElementById('anti_link').checked = configData.anti_link || false;
+                document.getElementById('kick_no_user').checked = configData.kick_no_user || false;
+                document.getElementById('kick_no_avatar').checked = configData.kick_no_avatar || false;
+                document.getElementById('kick_foreign_name').checked = configData.kick_foreign_name || false;
+                document.getElementById('enable_fomo').checked = configData.enable_fomo || false;
+                document.getElementById('fomo_min').value = configData.fomo_min || 5;
+                document.getElementById('fomo_max').value = configData.fomo_max || 10;
+                document.getElementById('fomo_cooldown').value = configData.fomo_cooldown || 60;
+                document.getElementById('fomo_script').value = configData.fomo_script || '';
+
+                updateUIRealtime(configData);
+            }
+            await fetchCustomers();
+
+            supabaseClient.channel('custom-all-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'configs', filter: `tenant_id=eq.${tenant_id}` }, payload => updateUIRealtime(payload.new))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'customers', filter: `tenant_id=eq.${tenant_id}` }, payload => fetchCustomers())
+                .subscribe();
+        }
+
+        async function saveConfig() {
+            if(!supabaseClient) return;
+            const tenant_id = document.getElementById('tenant_id').value;
+            const payload = {
+                tenant_id: tenant_id,
+                api_id: document.getElementById('api_id').value,
+                api_hash: document.getElementById('api_hash').value,
+                bot_token: document.getElementById('bot_token').value,
+                spy_phone: document.getElementById('spy_phone').value,
+                sale_chat_id: document.getElementById('sale_chat_id').value,
+                spy_target_groups: document.getElementById('spy_target_groups').value,
+                my_protected_groups: document.getElementById('my_protected_groups').value,
+                
+                // Các trường Tab Vũ Khí mới
+                keywords: document.getElementById('keywords').value,
+                auto_kick_spam: document.getElementById('auto_kick_spam').checked,
+                anti_link: document.getElementById('anti_link').checked,
+                kick_no_user: document.getElementById('kick_no_user').checked,
+                kick_no_avatar: document.getElementById('kick_no_avatar').checked,
+                kick_foreign_name: document.getElementById('kick_foreign_name').checked,
+                enable_fomo: document.getElementById('enable_fomo').checked,
+                fomo_min: parseInt(document.getElementById('fomo_min').value),
+                fomo_max: parseInt(document.getElementById('fomo_max').value),
+                fomo_cooldown: parseInt(document.getElementById('fomo_cooldown').value),
+                fomo_script: document.getElementById('fomo_script').value
+            };
+            const { error } = await supabaseClient.from('configs').upsert(payload, { onConflict: 'tenant_id' });
+            if (error) showToast("Lỗi lưu DB: " + error.message, true);
+            else showToast("Đã lưu Cấu hình vào Database!");
+        }
+
+        async function requestOTP() {
+            const phone = document.getElementById('spy_phone').value;
+            if(!phone) { showToast("Nhập số điện thoại trước!", true); return; }
+            await saveConfig();
+            await supabaseClient.from('configs').update({ login_status: 'request_login' }).eq('tenant_id', document.getElementById('tenant_id').value);
+            showToast("Đã báo Server...");
+        }
+
+        async function submitOTP() {
+            const code = document.getElementById('otp_code').value;
+            if(!code) { showToast("Chưa nhập OTP!", true); return; }
+            await supabaseClient.from('configs').update({ otp_code: code, login_status: 'submit_otp' }).eq('tenant_id', document.getElementById('tenant_id').value);
+            showToast("Đã gửi OTP...");
+        }
+
+        async function triggerScan() {
+            await supabaseClient.from('configs').update({ request_scan: true }).eq('tenant_id', document.getElementById('tenant_id').value);
+            showToast("Server đang quét nhóm...");
+        }
+
+        function addIDToInput(inputId) {
+            const select = document.getElementById('scanned_groups_select');
+            if(!select.value) return;
+            const input = document.getElementById(inputId);
+            if (input.value.trim() === '') input.value = select.value;
+            else if (!input.value.includes(select.value)) input.value += ', ' + select.value;
+            saveConfig();
+        }
+
+        function updateUIRealtime(configData) {
+            const statusEl = document.getElementById('login_status_text');
+            const otpSection = document.getElementById('otp_section');
+            if (configData.login_status === 'waiting_otp') {
+                statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-yellow-400"></i> Đang chờ mã OTP...';
+                otpSection.classList.remove('hidden');
+            } else if (configData.login_status === 'logged_in') {
+                statusEl.innerHTML = '<i class="fa-solid fa-check text-green-500"></i> Điệp Viên đang hoạt động!';
+                otpSection.classList.add('hidden');
+            }
+            if (configData.scanned_groups && configData.scanned_groups.length > 0) {
+                const select = document.getElementById('scanned_groups_select');
+                select.innerHTML = '<option value="">-- Chọn nhóm --</option>';
+                configData.scanned_groups.forEach(g => { select.innerHTML += `<option value="${g.id}">${g.name} (ID: ${g.id})</option>`; });
+            }
+        }
+
+        async function fetchCustomers() {
+            if(!supabaseClient) return;
+            const { data } = await supabaseClient.from('customers').select('*').eq('tenant_id', document.getElementById('tenant_id').value).order('created_at', { ascending: false });
+            if(data) { customersData = data; renderTable(); }
+        }
+
+        function renderTable() {
+        const tbody = document.getElementById('crm_body');
+        tbody.innerHTML = '';
+        // Thêm tiêu đề cột Hành động (nếu bảng chưa có)
+        const thead = document.querySelector('thead tr');
+        if(thead.children.length === 4) {
+            thead.innerHTML += '<th class="px-4 py-3 text-center">Hành động</th>';
+        }
+
+        customersData.forEach(c => {
+            tbody.innerHTML += `
+                <tr class="hover:bg-gray-700 transition border-t border-gray-700">
+                    <td class="px-4 py-3"><div class="font-bold text-white">${c.full_name || 'Ẩn danh'}</div><div class="text-xs text-blue-400">@${c.username || 'null'}</div></td>
+                    <td class="px-4 py-3"><span class="bg-gray-800 px-2 py-1 rounded text-xs">${c.source_group || 'N/A'}</span></td>
+                    <td class="px-4 py-3">
+                        <select onchange="supabaseClient.from('customers').update({status: this.value}).eq('id', '${c.id}')" class="text-xs rounded px-2 py-1 bg-gray-600 cursor-pointer outline-none text-white">
+                            <option value="Mới" ${c.status==='Mới'?'selected':''}>Mới</option>
+                            <option value="Đã chốt" ${c.status==='Đã chốt'?'selected':''}>Đã chốt</option>
+                        </select>
+                    </td>
+                    <td class="px-4 py-3"><input type="text" value="${c.notes || ''}" onchange="supabaseClient.from('customers').update({notes: this.value}).eq('id', '${c.id}')" class="w-full bg-darkbg border border-gray-600 rounded px-2 py-1 text-xs text-white"></td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="deleteCustomer('${c.id}')" class="text-red-500 hover:text-red-400 p-2 rounded hover:bg-gray-800 transition" title="Xóa khách này">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
+        });
+    }
+        async function deleteCustomer(id) {
+        if(!confirm("Bạn có chắc chắn muốn xóa khách hàng này khỏi danh sách?")) return;
+        const { error } = await supabaseClient.from('customers').delete().eq('id', id);
+        if (error) {
+            showToast("Lỗi xóa: " + error.message, true);
+        } else {
+            showToast("Đã xóa khách hàng thành công!");
+            fetchCustomers(); // Tải lại bảng ngay lập tức
+        }
+    }
+        window.onload = loadData;
+    </script>
+</body>
+</html>
