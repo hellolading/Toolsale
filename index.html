@@ -21,15 +21,33 @@
 </head>
 <body class="bg-darkbg text-gray-200 font-sans h-screen flex overflow-hidden">
 
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-panelbg border-r border-gray-700 flex flex-col">
+    <!-- MÀN HÌNH ĐĂNG NHẬP (HIỆN BAN ĐẦU) -->
+    <div id="login-screen" class="fixed inset-0 bg-darkbg z-50 flex items-center justify-center">
+        <div class="bg-panelbg p-8 rounded-xl shadow-2xl w-96 border border-gray-700 text-center">
+            <h1 class="text-2xl font-bold text-white mb-2"><i class="fa-solid fa-fire text-red-500"></i> SIÊU TOOL CRM</h1>
+            <p class="text-xs text-accent mb-6">Vui lòng nhập mã khách thuê để tiếp tục</p>
+            
+            <div class="mb-4 text-left">
+                <label class="block text-xs text-gray-400 mb-1 font-bold">ID Khách Thuê (Tenant ID)</label>
+                <input type="text" id="input_tenant_id" placeholder="VD: KHACH01" class="w-full bg-darkbg border border-gray-600 rounded px-4 py-3 text-sm text-white font-bold focus:border-blue-500 outline-none">
+            </div>
+            
+            <button onclick="handleLogin()" class="w-full bg-primary hover:bg-primary_hover text-white font-bold py-3 rounded shadow-lg transition">
+                <i class="fa-solid fa-right-to-bracket"></i> ĐĂNG NHẬP HỆ THỐNG
+            </button>
+        </div>
+    </div>
+
+    <!-- SIDEBAR (BỊ ẨN KHI CHƯA ĐĂNG NHẬP) -->
+    <aside id="sidebar" class="w-64 bg-panelbg border-r border-gray-700 flex flex-col hidden">
         <div class="p-6 text-center border-b border-gray-700">
             <h1 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-fire text-red-500"></i> SIÊU TOOL CRM</h1>
-            <p class="text-xs text-accent">Bản SaaS Đa Nhóm Tự Động</p>
+            <p class="text-xs text-accent">Mã: <span id="display_tenant" class="font-bold text-white"></span></p>
         </div>
-        <div class="p-4">
-            <label class="block text-xs text-gray-400 mb-1">ID Khách Thuê (Tenant ID)</label>
-            <input type="text" id="tenant_id" value="TENANT_001" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-sm text-white font-bold text-center" onchange="loadData()">
+        <div class="p-4 border-b border-gray-700">
+            <button onclick="logout()" class="w-full bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-600 text-xs py-2 rounded transition">
+                <i class="fa-solid fa-right-from-bracket"></i> Thoát / Đổi tài khoản
+            </button>
         </div>
         <nav class="flex-1 px-4 py-2 space-y-2">
             <button onclick="switchTab('tab-config', this)" class="menu-item active w-full flex items-center px-4 py-3 rounded-md text-gray-300 hover:bg-gray-700 transition">
@@ -49,11 +67,11 @@
         </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
-    <main class="flex-1 flex flex-col h-screen overflow-y-auto p-8 relative">
+    <!-- MAIN CONTENT (BỊ ẨN KHI CHƯA ĐĂNG NHẬP) -->
+    <main id="main-content" class="flex-1 flex flex-col h-screen overflow-y-auto p-8 relative hidden">
         <div id="toast" class="fixed top-5 right-5 bg-green-500 text-white px-6 py-3 rounded shadow-lg transform transition-transform duration-300 translate-x-full z-50">Thành công!</div>
 
-        <!-- TAB 1: CẤU HÌNH (Đã thu gọn để code ngắn gọn, giữ nguyên cấu trúc cũ) -->
+        <!-- TAB 1: CẤU HÌNH -->
         <div id="tab-config" class="tab-content max-w-4xl mx-auto w-full" style="display: block;">
             <h2 class="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-2">Cấu Hình Kết Nối Telegram</h2>
             
@@ -98,22 +116,40 @@
             </div>
         </div>
 
-        <!-- TAB 2: VŨ KHÍ (BẢN FULL) -->
+        <!-- TAB 2: VŨ KHÍ & FOMO -->
         <div id="tab-tools" class="tab-content max-w-4xl mx-auto w-full" style="display: none;">
-            <h2 class="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-2">Vũ Khí & Bảo Vệ Tư Dinh</h2>
+            <h2 class="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-2">Vũ Khí, Bảo Vệ & Kích Cầu FOMO</h2>
             
-            <!-- LUỒNG ĐÁNH CHẶN ĐỐI THỦ -->
             <div class="bg-panelbg p-6 rounded-lg shadow-md mb-6 border-t-2 border-primary">
                 <h3 class="text-md font-bold text-white mb-4"><i class="fa-solid fa-plane-slash text-gray-400"></i> LUỒNG ĐÁNH CHẶN ĐỐI THỦ</h3>
-                <div class="space-y-3">
-                    <input type="text" id="keywords" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white text-sm" placeholder="xa bờ, cháy, xin link, kéo, nạp...">
+                <input type="text" id="keywords" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white text-sm" placeholder="xa bờ, cháy, xin link, kéo, nạp...">
+            </div>
+
+            <!-- CÀI ĐẶT FOMO (ĐÃ ĐƯỢC KHÔI PHỤC) -->
+            <div class="bg-panelbg p-6 rounded-lg shadow-md mb-6 border-t-2 border-accent">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-md font-bold text-white"><i class="fa-solid fa-fire text-accent"></i> CHIẾN DỊCH FOMO (KÍCH CẦU TỰ ĐỘNG)</h3>
+                    <div class="flex items-center">
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                            <input type="checkbox" id="enable_fomo" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                            <label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
+                        </div>
+                        <span class="text-xs text-accent font-bold">Bật FOMO</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div><label class="block text-xs text-gray-400 mb-1">Số lượng Min</label><input type="number" id="fomo_min" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white text-sm" value="5"></div>
+                    <div><label class="block text-xs text-gray-400 mb-1">Số lượng Max</label><input type="number" id="fomo_max" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white text-sm" value="10"></div>
+                    <div><label class="block text-xs text-gray-400 mb-1">Khoảng cách (Phút)</label><input type="number" id="fomo_cooldown" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white text-sm" value="60"></div>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Kịch bản nội dung FOMO</label>
+                    <textarea id="fomo_script" rows="2" class="w-full bg-darkbg border border-gray-600 rounded px-3 py-2 text-white text-sm" placeholder="Nhập nội dung tin nhắn kích cầu..."></textarea>
                 </div>
             </div>
 
-            <!-- LỌC RÁC CHUYÊN SÂU -->
             <div class="bg-panelbg p-6 rounded-lg shadow-md mb-6 border-t-2 border-primary">
                 <h3 class="text-md font-bold text-white mb-4"><i class="fa-solid fa-shield-halved text-gray-400"></i> LỌC RÁC CHUYÊN SÂU (Tất cả Nhóm Nhà)</h3>
-                
                 <div class="flex items-center mb-4">
                     <div class="relative inline-block w-10 mr-2 align-middle select-none">
                         <input type="checkbox" id="auto_kick_spam" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
@@ -121,68 +157,12 @@
                     </div>
                     <span class="text-sm font-bold text-white">Bật Quản Gia (Mắt Thần soi khách mới)</span>
                 </div>
-
                 <div class="grid grid-cols-3 gap-4 pl-4 mb-4">
-                    <div class="flex items-center">
-                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
-                            <input type="checkbox" id="kick_no_user" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                            <label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
-                        </div>
-                        <span class="text-sm text-gray-300">Kick: Không Username</span>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
-                            <input type="checkbox" id="kick_no_avatar" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                            <label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
-                        </div>
-                        <span class="text-sm text-gray-300">Kick: Không Avatar</span>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
-                            <input type="checkbox" id="kick_foreign_name" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                            <label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
-                        </div>
-                        <span class="text-sm text-gray-300">Kick: Tên lạ (Trung, Á Rập...)</span>
-                    </div>
+                    <div class="flex items-center"><input type="checkbox" id="kick_no_user" class="mr-2"><span class="text-sm text-gray-300">Kick: Không Username</span></div>
+                    <div class="flex items-center"><input type="checkbox" id="kick_no_avatar" class="mr-2"><span class="text-sm text-gray-300">Kick: Không Avatar</span></div>
+                    <div class="flex items-center"><input type="checkbox" id="kick_foreign_name" class="mr-2"><span class="text-sm text-gray-300">Kick: Tên lạ</span></div>
                 </div>
-
-                <div class="flex items-center pl-4">
-                    <div class="relative inline-block w-10 mr-2 align-middle select-none">
-                        <input type="checkbox" id="anti_link" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                        <label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
-                    </div>
-                    <span class="text-sm text-gray-300">Xóa tin nhắn: Có chứa Link / Chuyển tiếp (Cướp khách)</span>
-                </div>
-            </div>
-
-            <!-- CHIẾN DỊCH FOMO ĐẾM NGƯỢC -->
-            <div class="bg-panelbg p-6 rounded-lg shadow-md mb-6 border-t-2 border-primary">
-                <h3 class="text-md font-bold text-white mb-4"><i class="fa-solid fa-bullhorn text-gray-400"></i> CHIẾN DỊCH FOMO ĐẾM NGƯỢC (Tất cả Nhóm Nhà)</h3>
-                
-                <div class="flex items-center mb-4">
-                    <div class="relative inline-block w-10 mr-2 align-middle select-none">
-                        <input type="checkbox" id="enable_fomo" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                        <label class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
-                    </div>
-                    <span class="text-sm font-bold text-white">Bật tự động quăng mồi đếm ngược</span>
-                </div>
-
-                <div class="flex items-center space-x-2 text-sm text-gray-300 mb-4 pl-4">
-                    <span>Khoảng cách ngẫu nhiên thả từng câu đếm ngược (Phút) - Từ:</span>
-                    <input type="number" id="fomo_min" class="w-16 bg-darkbg border border-gray-600 rounded px-2 py-1 text-center" value="5">
-                    <span>đến</span>
-                    <input type="number" id="fomo_max" class="w-16 bg-darkbg border border-gray-600 rounded px-2 py-1 text-center" value="10">
-                </div>
-
-                <div class="flex items-center space-x-2 text-sm text-gray-300 mb-4 pl-4">
-                    <span>Thời gian nghỉ sau khi hết kịch bản để lặp lại vòng mới (Phút):</span>
-                    <input type="number" id="fomo_cooldown" class="w-16 bg-darkbg border border-gray-600 rounded px-2 py-1 text-center" value="60">
-                </div>
-
-                <div class="pl-4">
-                    <label class="block text-sm text-gray-400 mb-2">Kịch bản đếm ngược (Mỗi dòng là 1 tin nhắn, ấn Enter để xuống dòng):</label>
-                    <textarea id="fomo_script" rows="5" class="w-full bg-[#111] border border-gray-700 rounded px-3 py-2 text-sm text-gray-300 font-mono" placeholder="MỞ CA KÉO VIP 20H. Nhận đúng 5 SLOT vốn 5M. Ai đi inbox!&#10;KHÁCH đăng ký nhanh quá, hiện tại chỉ còn trống 3 SLOT nhé.&#10;Còn duy nhất 1 SLOT cuối cùng cho bác nào nhanh tay. Inbox ngay!&#10;ĐÃ CHỐT ĐỦ SLOT. Hẹn anh em ca sau!"></textarea>
-                </div>
+                <div class="flex items-center pl-4"><input type="checkbox" id="anti_link" class="mr-2"><span class="text-sm text-gray-300">Xóa tin nhắn chứa Link / Chuyển tiếp</span></div>
             </div>
             
             <div class="text-center mt-6">
@@ -190,16 +170,16 @@
             </div>
         </div>
 
-        <!-- TAB 3: DATA KHÁCH HÀNG (Giữ nguyên) -->
+        <!-- TAB 3: DATA KHÁCH HÀNG -->
         <div id="tab-crm" class="tab-content w-full h-full flex-col" style="display: none;">
             <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold text-white"><i class="fa-solid fa-users text-accent"></i> Data Khách Hàng Live</h2></div>
             <div class="flex-1 bg-panelbg rounded-lg shadow-md overflow-hidden flex flex-col">
                 <div class="overflow-y-auto flex-1">
                     <table class="w-full text-left text-sm text-gray-300">
                         <thead class="text-xs uppercase bg-primary text-white sticky top-0">
-                            <tr><th class="px-4 py-3">Khách hàng</th><th class="px-4 py-3">Nguồn Nhóm</th><th class="px-4 py-3">Trạng thái</th><th class="px-4 py-3">Ghi chú Sale</th></tr>
+                            <tr><th class="px-4 py-3">Khách hàng</th><th class="px-4 py-3">Nguồn Nhóm</th><th class="px-4 py-3">Trạng thái</th><th class="px-4 py-3">Ghi chú Sale</th><th class="px-4 py-3 text-center">Hành động</th></tr>
                         </thead>
-                        <tbody id="crm_body" class="divide-y divide-gray-700"><tr><td colspan="4" class="text-center py-8 text-gray-500">Đang tải dữ liệu...</td></tr></tbody>
+                        <tbody id="crm_body" class="divide-y divide-gray-700"><tr><td colspan="5" class="text-center py-8 text-gray-500">Đang tải dữ liệu...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -207,12 +187,72 @@
     </main>
 
     <script>
+        const SUPABASE_URL = "https://uzsrmmfeynropfxkerud.supabase.co"; // Thay URL của bạn
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6c3JtbWZleW5yb3BmeGtlcnVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxNDEwNDgsImV4cCI6MjEwOTcxNzA0OH0.kyC9sv9uQKORq1EE-j7l1FjwhVko7qow2sCOTCUGAPM"; // Thay Key của bạn
+        
+        let supabaseClient = null;
+        try { if (window.supabase) supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) { console.error(e); }
+
+        let currentTenantId = localStorage.getItem('active_tenant_id') || '';
+        let customersData = [];
+
+        // Tự động kiểm tra nếu đã đăng nhập từ trước
+        window.onload = function() {
+            if (currentTenantId) {
+                document.getElementById('input_tenant_id').value = currentTenantId;
+                handleLogin();
+            }
+        }
+
+        async function handleLogin() {
+            const tenantInput = document.getElementById('input_tenant_id').value.trim();
+            if(!tenantInput) {
+                alert("Vui lòng nhập mã Khách Thuê!");
+                return;
+            }
+
+            // KIỂM TRA XEM MÃ NÀY ĐÃ TỒN TẠI TRÊN SUPABASE CHƯA
+            if (!supabaseClient) {
+                alert("Lỗi kết nối Supabase!");
+                return;
+            }
+
+            const { data, error } = await supabaseClient
+                .from('configs')
+                .select('tenant_id')
+                .eq('tenant_id', tenantInput)
+                .maybeSingle();
+
+            if (error || !data) {
+                // Nếu chưa được tạo trên Supabase -> Chặn lại ngay lập tức
+                alert("❌ Mã khách thuê không tồn tại hoặc chưa được kích hoạt! Vui lòng liên hệ Admin.");
+                return;
+            }
+
+            // NẾU TỒN TẠI -> CHO PHÉP ĐĂNG NHẬP VÀO TRONG
+            currentTenantId = tenantInput;
+            localStorage.setItem('active_tenant_id', currentTenantId);
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('sidebar').classList.remove('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            document.getElementById('display_tenant').textContent = currentTenantId;
+
+            loadData();
+        }
+
+        function logout() {
+            localStorage.removeItem('active_tenant_id');
+            location.reload(); // Tải lại trang để về màn hình trống
+        }
+
         function switchTab(tabId, btnElement) {
             document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).style.display = tabId === 'tab-crm' ? 'flex' : 'block';
             btnElement.classList.add('active');
         }
+
         function showToast(msg, isError = false) {
             const toast = document.getElementById('toast');
             toast.textContent = msg;
@@ -221,21 +261,11 @@
             setTimeout(() => toast.style.transform = 'translateX(150%)', 4000);
         }
 
-        const SUPABASE_URL = "https://uzsrmmfeynropfxkerud.supabase.co"; // ĐIỀN URL CỦA BẠN
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6c3JtbWZleW5yb3BmeGtlcnVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxNDEwNDgsImV4cCI6MjEwOTcxNzA0OH0.kyC9sv9uQKORq1EE-j7l1FjwhVko7qow2sCOTCUGAPM";
-        
-        let supabaseClient = null;
-        try { if (window.supabase) supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) { console.error(e); }
-
-        let customersData = [];
-
         async function loadData() {
-            if(!supabaseClient) return;
-            const tenant_id = document.getElementById('tenant_id').value;
+            if(!supabaseClient || !currentTenantId) return;
             
-            const { data: configData } = await supabaseClient.from('configs').select('*').eq('tenant_id', tenant_id).single();
+            const { data: configData } = await supabaseClient.from('configs').select('*').eq('tenant_id', currentTenantId).single();
             if (configData) {
-                // Tab 1
                 document.getElementById('api_id').value = configData.api_id || '';
                 document.getElementById('api_hash').value = configData.api_hash || '';
                 document.getElementById('bot_token').value = configData.bot_token || '';
@@ -243,35 +273,26 @@
                 document.getElementById('sale_chat_id').value = configData.sale_chat_id || '';
                 document.getElementById('spy_target_groups').value = configData.spy_target_groups || '';
                 document.getElementById('my_protected_groups').value = configData.my_protected_groups || '';
-                
-                // Tab 2 (Vũ Khí)
                 document.getElementById('keywords').value = configData.keywords || '';
                 document.getElementById('auto_kick_spam').checked = configData.auto_kick_spam || false;
                 document.getElementById('anti_link').checked = configData.anti_link || false;
                 document.getElementById('kick_no_user').checked = configData.kick_no_user || false;
                 document.getElementById('kick_no_avatar').checked = configData.kick_no_avatar || false;
                 document.getElementById('kick_foreign_name').checked = configData.kick_foreign_name || false;
-                document.getElementById('enable_fomo').checked = configData.enable_fomo || false;
-                document.getElementById('fomo_min').value = configData.fomo_min || 5;
-                document.getElementById('fomo_max').value = configData.fomo_max || 10;
-                document.getElementById('fomo_cooldown').value = configData.fomo_cooldown || 60;
-                document.getElementById('fomo_script').value = configData.fomo_script || '';
-
                 updateUIRealtime(configData);
             }
             await fetchCustomers();
 
-            supabaseClient.channel('custom-all-channel')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'configs', filter: `tenant_id=eq.${tenant_id}` }, payload => updateUIRealtime(payload.new))
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'customers', filter: `tenant_id=eq.${tenant_id}` }, payload => fetchCustomers())
+            supabaseClient.channel('custom-login-channel')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'configs', filter: `tenant_id=eq.${currentTenantId}` }, payload => updateUIRealtime(payload.new))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'customers', filter: `tenant_id=eq.${currentTenantId}` }, payload => fetchCustomers())
                 .subscribe();
         }
 
         async function saveConfig() {
             if(!supabaseClient) return;
-            const tenant_id = document.getElementById('tenant_id').value;
             const payload = {
-                tenant_id: tenant_id,
+                tenant_id: currentTenantId,
                 api_id: document.getElementById('api_id').value,
                 api_hash: document.getElementById('api_hash').value,
                 bot_token: document.getElementById('bot_token').value,
@@ -279,19 +300,12 @@
                 sale_chat_id: document.getElementById('sale_chat_id').value,
                 spy_target_groups: document.getElementById('spy_target_groups').value,
                 my_protected_groups: document.getElementById('my_protected_groups').value,
-                
-                // Các trường Tab Vũ Khí mới
                 keywords: document.getElementById('keywords').value,
                 auto_kick_spam: document.getElementById('auto_kick_spam').checked,
                 anti_link: document.getElementById('anti_link').checked,
                 kick_no_user: document.getElementById('kick_no_user').checked,
                 kick_no_avatar: document.getElementById('kick_no_avatar').checked,
                 kick_foreign_name: document.getElementById('kick_foreign_name').checked,
-                enable_fomo: document.getElementById('enable_fomo').checked,
-                fomo_min: parseInt(document.getElementById('fomo_min').value),
-                fomo_max: parseInt(document.getElementById('fomo_max').value),
-                fomo_cooldown: parseInt(document.getElementById('fomo_cooldown').value),
-                fomo_script: document.getElementById('fomo_script').value
             };
             const { error } = await supabaseClient.from('configs').upsert(payload, { onConflict: 'tenant_id' });
             if (error) showToast("Lỗi lưu DB: " + error.message, true);
@@ -302,19 +316,19 @@
             const phone = document.getElementById('spy_phone').value;
             if(!phone) { showToast("Nhập số điện thoại trước!", true); return; }
             await saveConfig();
-            await supabaseClient.from('configs').update({ login_status: 'request_login' }).eq('tenant_id', document.getElementById('tenant_id').value);
-            showToast("Đã báo Server...");
+            await supabaseClient.from('configs').update({ login_status: 'request_login' }).eq('tenant_id', currentTenantId);
+            showToast("Đã báo Server gửi OTP...");
         }
 
         async function submitOTP() {
             const code = document.getElementById('otp_code').value;
             if(!code) { showToast("Chưa nhập OTP!", true); return; }
-            await supabaseClient.from('configs').update({ otp_code: code, login_status: 'submit_otp' }).eq('tenant_id', document.getElementById('tenant_id').value);
-            showToast("Đã gửi OTP...");
+            await supabaseClient.from('configs').update({ otp_code: code, login_status: 'submit_otp' }).eq('tenant_id', currentTenantId);
+            showToast("Đã gửi OTP xác nhận...");
         }
 
         async function triggerScan() {
-            await supabaseClient.from('configs').update({ request_scan: true }).eq('tenant_id', document.getElementById('tenant_id').value);
+            await supabaseClient.from('configs').update({ request_scan: true }).eq('tenant_id', currentTenantId);
             showToast("Server đang quét nhóm...");
         }
 
@@ -346,50 +360,44 @@
 
         async function fetchCustomers() {
             if(!supabaseClient) return;
-            const { data } = await supabaseClient.from('customers').select('*').eq('tenant_id', document.getElementById('tenant_id').value).order('created_at', { ascending: false });
+            const { data } = await supabaseClient.from('customers').select('*').eq('tenant_id', currentTenantId).order('created_at', { ascending: false });
             if(data) { customersData = data; renderTable(); }
         }
 
         function renderTable() {
-        const tbody = document.getElementById('crm_body');
-        tbody.innerHTML = '';
-        // Thêm tiêu đề cột Hành động (nếu bảng chưa có)
-        const thead = document.querySelector('thead tr');
-        if(thead.children.length === 4) {
-            thead.innerHTML += '<th class="px-4 py-3 text-center">Hành động</th>';
+            const tbody = document.getElementById('crm_body');
+            tbody.innerHTML = '';
+            if(customersData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-gray-500">Chưa có dữ liệu khách hàng nào</td></tr>`;
+                return;
+            }
+            customersData.forEach(c => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-700 transition border-t border-gray-700">
+                        <td class="px-4 py-3"><div class="font-bold text-white">${c.full_name || 'Ẩn danh'}</div><div class="text-xs text-blue-400">@${c.username || 'null'}</div></td>
+                        <td class="px-4 py-3"><span class="bg-gray-800 px-2 py-1 rounded text-xs">${c.source_group || 'N/A'}</span></td>
+                        <td class="px-4 py-3">
+                            <select onchange="supabaseClient.from('customers').update({status: this.value}).eq('id', '${c.id}')" class="text-xs rounded px-2 py-1 bg-gray-600 cursor-pointer outline-none text-white">
+                                <option value="Mới" ${c.status==='Mới'?'selected':''}>Mới</option>
+                                <option value="Đã chốt" ${c.status==='Đã chốt'?'selected':''}>Đã chốt</option>
+                            </select>
+                        </td>
+                        <td class="px-4 py-3"><input type="text" value="${c.notes || ''}" onchange="supabaseClient.from('customers').update({notes: this.value}).eq('id', '${c.id}')" class="w-full bg-darkbg border border-gray-600 rounded px-2 py-1 text-xs text-white"></td>
+                        <td class="px-4 py-3 text-center">
+                            <button onclick="deleteCustomer('${c.id}')" class="text-red-500 hover:text-red-400 p-2 rounded hover:bg-gray-800 transition" title="Xóa khách này">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
         }
 
-        customersData.forEach(c => {
-            tbody.innerHTML += `
-                <tr class="hover:bg-gray-700 transition border-t border-gray-700">
-                    <td class="px-4 py-3"><div class="font-bold text-white">${c.full_name || 'Ẩn danh'}</div><div class="text-xs text-blue-400">@${c.username || 'null'}</div></td>
-                    <td class="px-4 py-3"><span class="bg-gray-800 px-2 py-1 rounded text-xs">${c.source_group || 'N/A'}</span></td>
-                    <td class="px-4 py-3">
-                        <select onchange="supabaseClient.from('customers').update({status: this.value}).eq('id', '${c.id}')" class="text-xs rounded px-2 py-1 bg-gray-600 cursor-pointer outline-none text-white">
-                            <option value="Mới" ${c.status==='Mới'?'selected':''}>Mới</option>
-                            <option value="Đã chốt" ${c.status==='Đã chốt'?'selected':''}>Đã chốt</option>
-                        </select>
-                    </td>
-                    <td class="px-4 py-3"><input type="text" value="${c.notes || ''}" onchange="supabaseClient.from('customers').update({notes: this.value}).eq('id', '${c.id}')" class="w-full bg-darkbg border border-gray-600 rounded px-2 py-1 text-xs text-white"></td>
-                    <td class="px-4 py-3 text-center">
-                        <button onclick="deleteCustomer('${c.id}')" class="text-red-500 hover:text-red-400 p-2 rounded hover:bg-gray-800 transition" title="Xóa khách này">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>`;
-        });
-    }
         async function deleteCustomer(id) {
-        if(!confirm("Bạn có chắc chắn muốn xóa khách hàng này khỏi danh sách?")) return;
-        const { error } = await supabaseClient.from('customers').delete().eq('id', id);
-        if (error) {
-            showToast("Lỗi xóa: " + error.message, true);
-        } else {
-            showToast("Đã xóa khách hàng thành công!");
-            fetchCustomers(); // Tải lại bảng ngay lập tức
+            if(!confirm("Bạn có chắc chắn muốn xóa khách hàng này?")) return;
+            const { error } = await supabaseClient.from('customers').delete().eq('id', id);
+            if (error) showToast("Lỗi xóa: " + error.message, true);
+            else { showToast("Đã xóa!"); fetchCustomers(); }
         }
-    }
-        window.onload = loadData;
     </script>
 </body>
 </html>
